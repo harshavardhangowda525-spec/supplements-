@@ -7,12 +7,12 @@ import { PageHeader } from "@/components/layout/page-header";
 import { ShopView } from "@/components/shop/shop-view";
 import { ProductGridSkeleton } from "@/components/shop/skeletons";
 import { DemoNotice } from "@/components/brand/demo-badge";
-import { getCategories, getCategory, getProducts, isDemoMode } from "@/lib/data/catalog";
+import { getCategories, getCategory, getProducts, isDemoMode, staticParamsOrPlaceholder } from "@/lib/data/catalog";
 import { cn } from "@/lib/utils";
 
 export async function generateStaticParams() {
   const categories = await getCategories();
-  return categories.map((c) => ({ slug: c.slug }));
+  return staticParamsOrPlaceholder(categories.map((c) => c.slug));
 }
 
 export async function generateMetadata({ params }: PageProps<"/category/[slug]">): Promise<Metadata> {
