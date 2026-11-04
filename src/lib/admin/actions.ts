@@ -223,6 +223,23 @@ export async function setInquiryStatus(id: string, status: string): Promise<Acti
   return error ? { ok: false, message: friendly(error.message) } : { ok: true };
 }
 
+const orderStatus = z.enum(["paid", "ready", "collected", "cancelled"]);
+export async function setOrderStatus(id: string, status: string): Promise<ActionResult> {
+  const { sb } = await requireAdmin();
+  const s = orderStatus.safeParse(status);
+  if (!s.success) return { ok: false, message: "Invalid status." };
+  // Only orders that were actually paid can move through pickup states.
+  const { data, error } = await sb
+    .from("orders")
+    .update({ status: s.data })
+    .eq("id", id)
+    .in("status", ["paid", "ready", "collected", "cancelled"])
+    .select("id");
+  if (error) return { ok: false, message: friendly(error.message) };
+  if (!data?.length) return { ok: false, message: "Only paid orders can be updated." };
+  return { ok: true };
+}
+
 const reviewStatus = z.enum(["pending", "approved", "rejected"]);
 export async function setReviewStatus(id: string, status: string): Promise<ActionResult> {
   const { sb } = await requireAdmin();

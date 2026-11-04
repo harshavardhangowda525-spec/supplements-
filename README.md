@@ -33,7 +33,8 @@ A premium, mobile-first e-commerce website for **Fitzone Supplements**, a gym su
 | `/shop` | All products with filters (category, brand, flavour, size, price, availability), search, sort |
 | `/category/[slug]` | Category pages |
 | `/product/[slug]` | Product detail: gallery with zoom and lightbox, variants, quantity, cart, WhatsApp order and availability check, label-info accordion, related products |
-| `/cart` | Full cart + order summary + WhatsApp checkout |
+| `/cart` | Full cart + order summary + checkout (online payment for pickup, or WhatsApp inquiry) |
+| `/order/[id]` | Online order confirmation (order number, status, pickup details) |
 | `/about` | About Fitzone |
 | `/reviews` | Google snapshot, testimonial carousel, moderated website reviews and a review form |
 | `/contact` | Map, directions, tap-to-call, WhatsApp actions, hours, inquiry form |
@@ -85,7 +86,7 @@ Open http://localhost:3000. With the Supabase variables left empty, the site run
    NEXT_PUBLIC_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-or-publishable-key
    ```
-   Only the **anon/publishable** key is used. Never add the service-role key; it isn’t needed.
+   The website uses the **anon/publishable** key. The service-role key is only needed for online payments, as a server-only variable (see “Online payments”).
 5. Create the owner login in **Authentication → Users** (email and password). Then grant admin access:
    ```sql
    insert into public.admin_users (user_id)
@@ -115,7 +116,7 @@ All links use `https://wa.me/919686860337` with `encodeURIComponent`-encoded mes
 - **Availability check, store assistance, order follow-up:** dedicated messages on product and contact pages.
 - **Cart checkout:** lists each item × quantity with a website estimate, and asks the store to confirm availability and the final price.
 
-The UI always says an order is **only confirmed when the store replies**. No payment is taken on the site.
+WhatsApp orders are always described as inquiries that are **only confirmed when the store replies**. Online payment (if enabled) is a separate checkout option; see “Online payments”.
 
 ## Analytics (privacy-conscious)
 
@@ -127,18 +128,41 @@ The UI always says an order is **only confirmed when the store replies**. No pay
 - The admin overview labels these numbers as **tracked website activity, not confirmed sales**.
 - In demo mode, events are accepted but not stored.
 
-## Enabling Razorpay later
+## Online payments (Razorpay, store pickup)
 
-The architecture leaves room for online payments (`src/lib/payments/index.ts`), but they are **off**. Turn them on only after all of these are true:
+Customers can pay online for **store pickup** (no delivery). The WhatsApp inquiry stays available as an alternative.
 
-1. The business approves online payments.
-2. The catalogue has verified prices and stock.
-3. Shipping, returns and refund policies are published.
-4. Credentials are set: `NEXT_PUBLIC_RAZORPAY_KEY_ID` (public) and `RAZORPAY_KEY_SECRET` (server-only).
-5. You have implemented:
-   - a server route `/api/payments/razorpay/order` that creates an order with server-side prices, and
-   - a webhook or verify route that checks the payment signature.
-6. You set `NEXT_PUBLIC_PAYMENTS_ENABLED=true`.
+**How it works**
+1. The cart sends only product variant IDs and quantities to `/api/payments/razorpay/order`.
+2. The server re-prices everything from the database. It rejects demo, hidden and out-of-stock items, saves a `pending` order and creates a Razorpay order.
+3. Razorpay Checkout (UPI, cards, netbanking) opens in the browser.
+4. `/api/payments/razorpay/verify` checks the payment signature with your key secret. Only then does the database function `mark_order_paid` mark the order paid (exactly once) and reduce stock.
+5. The customer lands on `/order/[id]` with their order number. The order appears in **Admin → Online orders**, where you move it through *paid → ready → collected* (or *cancelled*).
+6. *(Recommended)* The Razorpay webhook `/api/payments/razorpay/webhook` confirms the payment even if the customer closes the browser too early.
+
+**Setup**
+1. In Supabase → SQL Editor, run `supabase/002_online_payments.sql` (after `schema.sql`).
+2. Add these in Vercel → Settings → Environment Variables, then redeploy:
+
+   | Key | Value |
+   | --- | --- |
+   | `NEXT_PUBLIC_PAYMENTS_ENABLED` | `true` |
+   | `NEXT_PUBLIC_RAZORPAY_KEY_ID` | Razorpay Key ID (`rzp_test_…` while testing) |
+   | `RAZORPAY_KEY_SECRET` | Razorpay Key Secret, **server-only** |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Supabase `service_role` / secret key, **server-only**, used only by the payment routes |
+   | `RAZORPAY_WEBHOOK_SECRET` | *(recommended)* the secret you choose when creating the webhook |
+
+3. *(Recommended)* In Razorpay Dashboard → **Webhooks → Add New Webhook**:
+   - URL: `https://YOUR-DOMAIN/api/payments/razorpay/webhook`
+   - Secret: any strong string (the same value goes in `RAZORPAY_WEBHOOK_SECRET`)
+   - Events: `payment.captured`, `order.paid`, `payment.failed`
+4. In Razorpay, make sure payments are set to **auto-capture** (Account & Settings → Payment capture).
+5. Test with `rzp_test_…` keys and Razorpay’s test cards or UPI (`success@razorpay`). Switch to `rzp_live_…` keys only after your Razorpay account is activated.
+
+**Notes**
+- Products marked `is_demo` can never be bought online. Real products need a price and stock set in the admin.
+- The two server-only keys must **never** get a `NEXT_PUBLIC_` prefix. They are read only in server code (`src/lib/supabase/service.ts`, `src/lib/payments/server.ts`).
+- Refunds are issued from the Razorpay dashboard. Then set the order to *cancelled* in the admin. Stock is not automatically restored on cancellation; adjust it in Products.
 
 ---
 
@@ -168,7 +192,7 @@ The architecture leaves room for online payments (`src/lib/payments/index.ts`), 
 | Privacy policy and terms | `src/app/(site)/privacy`, `terms` | Templates marked for review |
 | Shipping / returns / refunds pages | Not created | Add only once the business provides its actual policies |
 | Supabase project + admin user | See “Connecting Supabase” | Not configured (demo mode) |
-| Razorpay | See “Enabling Razorpay later” | Disabled |
+| Razorpay (online payment, store pickup) | See “Online payments” | Built; enable with keys + `002_online_payments.sql` |
 | Production domain | `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` |
 
 ## Project structure
@@ -193,6 +217,7 @@ src/
   proxy.ts             auth session refresh for /admin
 supabase/schema.sql    tables + RLS + storage
 supabase/seed.sql      optional demo seed
+supabase/002_online_payments.sql  orders table + mark_order_paid() for Razorpay
 scripts/               seed generator, smoke test
 ```
 

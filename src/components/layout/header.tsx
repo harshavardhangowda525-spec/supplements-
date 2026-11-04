@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "motion/react";
 import { Menu, Phone, ShoppingBag, X } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
@@ -13,8 +13,27 @@ import { cartCount } from "@/lib/cart-math";
 import { NAV_LINKS, SITE } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
-export function Header({ announcement }: { announcement?: string | null }) {
+type HeaderProps = { announcement?: string | null };
+
+/**
+ * The header highlights the current route, which is request-time URL data.
+ * Until it's known (e.g. on routes with unknown params) a static version with
+ * no active link renders inside the Suspense fallback.
+ */
+export function Header(props: HeaderProps) {
+  return (
+    <Suspense fallback={<HeaderView {...props} pathname="" />}>
+      <HeaderWithPath {...props} />
+    </Suspense>
+  );
+}
+
+function HeaderWithPath(props: HeaderProps) {
   const pathname = usePathname();
+  return <HeaderView {...props} pathname={pathname} />;
+}
+
+function HeaderView({ announcement, pathname }: HeaderProps & { pathname: string }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { scrollY } = useScroll();
@@ -42,7 +61,7 @@ export function Header({ announcement }: { announcement?: string | null }) {
     };
   }, [menuOpen]);
 
-  const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+  const isActive = (href: string) => (href === "/" ? pathname === "/" : !!pathname && pathname.startsWith(href));
 
   return (
     <>

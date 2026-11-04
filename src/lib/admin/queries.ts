@@ -60,3 +60,31 @@ export async function adminReviews(sb: SupabaseClient): Promise<ReviewRow[]> {
   if (error) throw new Error(error.message);
   return (data ?? []) as ReviewRow[];
 }
+
+export type OrderRow = {
+  id: string;
+  order_number: string;
+  customer_name: string;
+  customer_phone: string;
+  customer_email: string | null;
+  items: { name: string; variant_label: string; unit_price: number; quantity: number }[];
+  amount: number;
+  status: string;
+  razorpay_payment_id: string | null;
+  paid_at: string | null;
+  created_at: string;
+};
+
+/** Returns null when the orders table hasn't been created yet (002_online_payments.sql not run). */
+export async function adminOrders(sb: SupabaseClient, limit = 200): Promise<OrderRow[] | null> {
+  const { data, error } = await sb
+    .from("orders")
+    .select("id, order_number, customer_name, customer_phone, customer_email, items, amount, status, razorpay_payment_id, paid_at, created_at")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) {
+    if (/relation .*orders.* does not exist|Could not find the table/i.test(error.message)) return null;
+    throw new Error(error.message);
+  }
+  return (data ?? []) as OrderRow[];
+}

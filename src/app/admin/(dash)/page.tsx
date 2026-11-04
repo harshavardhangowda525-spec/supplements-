@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { AlertTriangle, Eye, MousePointerClick, Phone, Navigation, ShoppingCart, Users, Send, PackageX } from "lucide-react";
+import { AlertTriangle, Eye, MousePointerClick, Phone, Navigation, ShoppingCart, Users, Send, PackageX, Receipt, IndianRupee } from "lucide-react";
 import { requireAdmin } from "@/lib/admin/auth";
-import { adminEvents, adminProducts } from "@/lib/admin/queries";
-import { inventorySummary, summarise } from "@/lib/admin/analytics";
+import { adminEvents, adminOrders, adminProducts } from "@/lib/admin/queries";
+import { formatINR } from "@/lib/format";
+import { inventorySummary, recentPaidOrders, summarise } from "@/lib/admin/analytics";
 import { VisitsChart } from "@/components/admin/visits-chart";
 
 export const metadata = { title: "Overview" };
@@ -44,7 +45,8 @@ function TopList({ title, rows, names }: { title: string; rows: { slug: string; 
 
 export default async function AdminOverview() {
   const { sb } = await requireAdmin();
-  const [events, products] = await Promise.all([adminEvents(sb, 30), adminProducts(sb)]);
+  const [events, products, orders] = await Promise.all([adminEvents(sb, 30), adminProducts(sb), adminOrders(sb, 1000)]);
+  const paidOrders = recentPaidOrders(orders ?? [], 30);
   const a = summarise(events, 14);
   const inv = inventorySummary(products);
   const names = new Map(products.map((p) => [p.slug, p.name]));
@@ -70,6 +72,17 @@ export default async function AdminOverview() {
         <Stat icon={Phone} label="Call taps" value={a.totals.calls} />
         <Stat icon={Navigation} label="Directions taps" value={a.totals.directions} />
       </section>
+
+      {orders && (
+        <section aria-label="Confirmed online payments" className="space-y-3">
+          <h2 className="display text-3xl">Confirmed online payments</h2>
+          <p className="text-sm text-mist">Orders actually paid through Razorpay in the last 30 days (excludes cancelled and unpaid orders).</p>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <Stat icon={Receipt} label="Paid online orders" value={paidOrders.length} />
+            <Stat icon={IndianRupee} label="Paid amount" value={formatINR(paidOrders.reduce((s, o) => s + o.amount, 0))} />
+          </div>
+        </section>
+      )}
 
       <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
         <VisitsChart data={a.daily} />

@@ -198,6 +198,9 @@ create policy "admin update product images" on storage.objects for update to aut
 drop policy if exists "admin delete product images" on storage.objects;
 create policy "admin delete product images" on storage.objects for delete to authenticated using (bucket_id = 'product-images' and public.is_admin());
 
+-- ═══════════════════════ Online payments ═══════════════════════
+-- For Razorpay checkout (store pickup), also run supabase/002_online_payments.sql.
+
 -- ═══════════════════════ Make yourself an admin ═══════════════════════
 -- 1. Create a user in Authentication → Users (email + password).
 -- 2. Then run (replace the email):
