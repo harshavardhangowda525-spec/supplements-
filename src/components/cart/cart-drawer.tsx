@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { useCart } from "@/lib/cart-store";
 import { cartCount } from "@/lib/cart-math";
 import { fzButton } from "@/components/brand/button-styles";
+import { onlinePaymentsEnabled } from "@/lib/payments";
 import { CartLines } from "./cart-lines";
 import { CartCheckout } from "./cart-checkout";
 
@@ -23,7 +24,11 @@ export function CartDrawer() {
       >
         <SheetHeader className="border-b border-white/10 p-5">
           <SheetTitle className="display text-3xl text-white">Your cart ({cartCount(items)})</SheetTitle>
-          <SheetDescription className="text-mist">Review items, then send an inquiry on WhatsApp.</SheetDescription>
+          <SheetDescription className="text-mist">
+            {onlinePaymentsEnabled()
+              ? "Review items, then pay online for store pickup or send a WhatsApp inquiry."
+              : "Review items, then send an inquiry on WhatsApp."}
+          </SheetDescription>
         </SheetHeader>
 
         {items.length === 0 ? (
@@ -43,7 +48,7 @@ export function CartDrawer() {
               <CartLines compact onNavigate={close} />
             </div>
             <div className="border-t border-white/10 bg-obsidian/60 p-5">
-              <CartCheckout />
+              <CartCheckout onNavigate={close} />
               <Link href="/cart" onClick={close} className="mt-3 block text-center text-xs text-mist underline-offset-4 hover:text-lime hover:underline">
                 View full cart
               </Link>

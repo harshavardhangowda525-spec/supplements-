@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Boxes, FolderTree, Inbox, MessageSquareQuote, Settings, ExternalLink } from "lucide-react";
+import { BarChart3, Boxes, FolderTree, Inbox, MessageSquareQuote, Receipt, Settings, ExternalLink } from "lucide-react";
 import { LogoMark } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/admin", label: "Overview", icon: BarChart3 },
+  { href: "/admin/orders", label: "Online orders", icon: Receipt },
   { href: "/admin/products", label: "Products", icon: Boxes },
   { href: "/admin/categories", label: "Categories", icon: FolderTree },
   { href: "/admin/inquiries", label: "Inquiries", icon: Inbox },

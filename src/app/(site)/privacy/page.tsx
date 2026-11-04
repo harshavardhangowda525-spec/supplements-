@@ -34,7 +34,15 @@ export default function PrivacyPage() {
       </ul>
 
       <h2>Cart</h2>
-      <p>Your shopping cart is stored only in your own browser (local storage). It is not sent to us unless you send it on WhatsApp.</p>
+      <p>Your shopping cart is stored only in your own browser (local storage). It is not sent to us unless you send it on WhatsApp or check out online.</p>
+
+      <h2>Online orders and payments</h2>
+      <p>
+        If you pay online, we store your name, mobile number, optional email, the items ordered and the Razorpay
+        payment reference so we can prepare your order for pickup and handle any refunds. Card, UPI and bank details
+        are entered on Razorpay’s secure checkout and are never received or stored by this website. Razorpay processes
+        payment data under its own privacy policy.
+      </p>
 
       <h2>Website analytics</h2>
       <p>

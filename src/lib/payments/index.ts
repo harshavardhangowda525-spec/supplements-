@@ -1,23 +1,19 @@
 /**
- * Payment provider abstraction — prepared for a future Razorpay integration.
+ * Online payments — Razorpay, store pickup only.
  *
- * Online payments are intentionally DISABLED. Enable only after:
- *   1. the business approves online payments,
- *   2. the catalogue contains verified prices & stock,
- *   3. Razorpay credentials are configured (key id public, key secret server-only),
- *   4. a server route creates orders and verifies payment signatures.
- *
- * See README → "Enabling Razorpay later".
+ * Browser side: the checkout button appears when NEXT_PUBLIC_PAYMENTS_ENABLED
+ * is "true" and NEXT_PUBLIC_RAZORPAY_KEY_ID is set.
+ * Server side (see ./server.ts): orders are only created when the Razorpay
+ * secret and the Supabase service-role key are configured too.
  */
-export type PaymentProvider = {
-  name: string;
-  /** Server-side order creation endpoint (to be implemented). */
-  createOrderEndpoint: string;
-};
+export const RAZORPAY_KEY_ID = (process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "").trim();
 
-export function getPaymentProvider(): PaymentProvider | null {
-  const enabled = process.env.NEXT_PUBLIC_PAYMENTS_ENABLED === "true";
-  const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-  if (!enabled || !keyId) return null;
-  return { name: "Razorpay", createOrderEndpoint: "/api/payments/razorpay/order" };
+export function onlinePaymentsEnabled(): boolean {
+  return process.env.NEXT_PUBLIC_PAYMENTS_ENABLED === "true" && RAZORPAY_KEY_ID.length > 0;
 }
+
+export function isTestMode(): boolean {
+  return RAZORPAY_KEY_ID.startsWith("rzp_test_");
+}
+
+export const RAZORPAY_CHECKOUT_SRC = "https://checkout.razorpay.com/v1/checkout.js";

@@ -96,3 +96,26 @@ export const settingsInputSchema = z.object({
   mapsUrl: z.union([z.literal(""), z.string().trim().url().max(500)]).transform((v) => v || null),
   reviewsUrl: z.union([z.literal(""), z.string().trim().url().max(500)]).transform((v) => v || null),
 });
+
+/* ───────── Online checkout (Razorpay, store pickup) ───────── */
+
+export const checkoutSchema = z.object({
+  name: trimmed(80).min(2, "Please enter your name"),
+  phone: indianPhone,
+  email: z
+    .union([z.literal(""), z.string().trim().email("Enter a valid email").max(120)])
+    .optional()
+    .transform((v) => v || null),
+  notes: trimmed(500).optional().transform((v) => v || null),
+  items: z
+    .array(z.object({ variantId: z.string().uuid(), quantity: z.number().int().min(1).max(20) }))
+    .min(1, "Your cart is empty")
+    .max(30),
+});
+export type CheckoutInput = z.infer<typeof checkoutSchema>;
+
+export const paymentVerifySchema = z.object({
+  razorpay_order_id: z.string().regex(/^order_[A-Za-z0-9]+$/),
+  razorpay_payment_id: z.string().regex(/^pay_[A-Za-z0-9]+$/),
+  razorpay_signature: z.string().regex(/^[a-f0-9]{64}$/i),
+});

@@ -3,12 +3,13 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
-import { deleteReview, setInquiryStatus, setReviewStatus } from "@/lib/admin/actions";
+import { deleteReview, setInquiryStatus, setOrderStatus, setReviewStatus } from "@/lib/admin/actions";
 
-export function StatusSelect({ id, value, kind }: { id: string; value: string; kind: "inquiry" | "review" }) {
+export function StatusSelect({ id, value, kind }: { id: string; value: string; kind: "inquiry" | "review" | "order" }) {
   const [current, setCurrent] = useState(value);
   const [pending, start] = useTransition();
-  const options = kind === "inquiry" ? ["new", "contacted", "closed"] : ["pending", "approved", "rejected"];
+  const options =
+    kind === "inquiry" ? ["new", "contacted", "closed"] : kind === "order" ? ["paid", "ready", "collected", "cancelled"] : ["pending", "approved", "rejected"];
   return (
     <select
       aria-label="Status"
@@ -18,7 +19,8 @@ export function StatusSelect({ id, value, kind }: { id: string; value: string; k
         const next = e.target.value;
         setCurrent(next);
         start(async () => {
-          const res = kind === "inquiry" ? await setInquiryStatus(id, next) : await setReviewStatus(id, next);
+          const res =
+            kind === "inquiry" ? await setInquiryStatus(id, next) : kind === "order" ? await setOrderStatus(id, next) : await setReviewStatus(id, next);
           if (!res.ok) {
             setCurrent(value);
             toast.error(res.message ?? "Update failed");

@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
 import { WhatsAppLink } from "@/components/brand/tracked-links";
@@ -8,9 +9,19 @@ import { storeAssistanceMessage } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
 
 export function WhatsAppFloat() {
+  return (
+    <Suspense fallback={<FloatView lifted={false} />}>
+      <FloatWithPath />
+    </Suspense>
+  );
+}
+
+function FloatWithPath() {
   const pathname = usePathname();
-  // Product pages show a sticky mobile purchase bar — lift the button above it.
-  const lifted = pathname.startsWith("/product/");
+  return <FloatView lifted={pathname.startsWith("/product/")} />;
+}
+
+function FloatView({ lifted }: { lifted: boolean }) {
   return (
     <motion.div
       initial={{ scale: 0, opacity: 0 }}

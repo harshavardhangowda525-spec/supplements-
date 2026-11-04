@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/layout/legal";
-import { SITE } from "@/lib/site";
+import { FULL_ADDRESS, SITE } from "@/lib/site";
+import { onlinePaymentsEnabled } from "@/lib/payments";
 
 export const metadata: Metadata = {
   title: "Terms & Conditions",
@@ -20,12 +21,30 @@ export default function TermsPage() {
         do not represent actual inventory, brands, prices or stock. Product photos may be illustrative.
       </p>
 
-      <h2>Inquiries, not orders</h2>
+      <h2>WhatsApp and form inquiries</h2>
       <p>
-        Adding items to the cart and sending them on WhatsApp or through the inquiry form creates an
-        <strong className="text-white"> inquiry only</strong>. An order is confirmed only when {SITE.name} replies and
-        accepts it, confirming availability and the final price. No payment is collected on this website.
+        Sending your cart on WhatsApp or through the inquiry form creates an
+        <strong className="text-white"> inquiry only</strong>. It is confirmed only when {SITE.name} replies and
+        accepts it, confirming availability and the final price.
       </p>
+
+      <h2>Online payment (store pickup)</h2>
+      {onlinePaymentsEnabled() ? (
+        <>
+          <p>
+            Where online payment is offered, payments are processed securely by Razorpay. The amount is calculated from
+            current store prices when you check out. Your order is confirmed once payment succeeds and you receive an
+            order number.
+          </p>
+          <p>
+            Online orders are for <strong className="text-white">pickup from the store</strong> at {FULL_ADDRESS}. Please
+            bring your order number. If an item becomes unavailable, the store will contact you about an alternative or a
+            refund to your original payment method.
+          </p>
+        </>
+      ) : (
+        <p>Online payment is not currently offered on this website.</p>
+      )}
 
       <h2>Health information</h2>
       <p>

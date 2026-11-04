@@ -75,3 +75,15 @@ export function inventorySummary(products: Product[]) {
     units: variants.reduce((s, x) => s + Math.max(0, x.variant.stock), 0),
   };
 }
+
+const PAID_STATES = ["paid", "ready", "collected"];
+
+/** Orders confirmed as paid within the last `days` days. */
+export function recentPaidOrders<T extends { status: string; paid_at: string | null; created_at: string }>(
+  orders: T[],
+  days = 30,
+  now: Date = new Date(),
+): T[] {
+  const since = now.getTime() - days * 86_400_000;
+  return orders.filter((o) => PAID_STATES.includes(o.status) && new Date(o.paid_at ?? o.created_at).getTime() >= since);
+}
