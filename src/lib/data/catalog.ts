@@ -15,6 +15,18 @@ import {
 } from "./mappers";
 
 export const CATALOG_TAG = "catalog";
+
+/**
+ * With Cache Components, generateStaticParams must return at least one entry.
+ * When the catalogue is empty (fresh database, or Supabase unreachable during
+ * the build) this placeholder keeps the build valid; its page renders a 404 and
+ * real slugs are rendered on demand.
+ */
+export const PLACEHOLDER_SLUG = "__placeholder";
+
+export function staticParamsOrPlaceholder(slugs: string[]): { slug: string }[] {
+  return slugs.length ? slugs.map((slug) => ({ slug })) : [{ slug: PLACEHOLDER_SLUG }];
+}
 export const SETTINGS_TAG = "settings";
 
 /** True when the site is running on the bundled demo catalogue. */

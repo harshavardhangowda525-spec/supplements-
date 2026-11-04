@@ -10,12 +10,12 @@ import { ProductDetailSkeleton } from "@/components/shop/skeletons";
 import { DemoBadge, DemoNotice } from "@/components/brand/demo-badge";
 import { SectionHeading } from "@/components/brand/section-heading";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { getCategory, getProduct, getProducts } from "@/lib/data/catalog";
+import { getCategory, getProduct, getProducts, staticParamsOrPlaceholder } from "@/lib/data/catalog";
 import { SITE } from "@/lib/site";
 
 export async function generateStaticParams() {
   const products = await getProducts();
-  return products.map((p) => ({ slug: p.slug }));
+  return staticParamsOrPlaceholder(products.map((p) => p.slug));
 }
 
 export async function generateMetadata({ params }: PageProps<"/product/[slug]">): Promise<Metadata> {
